@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>Alfred, el Mayordomo</title>
+  <style>
+    body {
+      font-family: 'Georgia', serif;
+      background: #111;
+      color: #eee;
+      padding: 20px;
+    }
+    #chat {
+      max-width: 600px;
+      margin: auto;
+      background: #222;
+      padding: 20px;
+      border-radius: 12px;
+    }
+    input, button {
+      width: 100%;
+      padding: 12px;
+      margin-top: 10px;
+      border-radius: 8px;
+      border: none;
+    }
+    #messages {
+      white-space: pre-wrap;
+      margin-top: 20px;
+      font-size: 16px;
+    }
+    .msg {
+      margin-bottom: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div id="chat">
+    <h2>🕵️ Alfred, el Mayordomo</h2>
+    <div id="messages">
+      <div class="msg">🕯️ <strong>Bienvenido, joven heredero(a)</strong>. Estoy aquí para asistirle en la preparación de su personaje teatral. ¿Podría indicarme su nombre completo?</div>
+    </div>
+    <input id="userInput" placeholder="Escriba su respuesta..." />
+    <button onclick="sendMessage()">Enviar</button>
+  </div>
+
+  <script>
+    const messages = [
+      {
+        role: "system",
+        content: `Actúa como Alfred, un mayordomo elegante y misterioso del Detective Club 🕵️‍♂️. Tu misión es recopilar con amabilidad y precisión los datos necesarios para preparar el reparto de personajes. Usa siempre un tono formal, elegante y teatral. Haz las siguientes preguntas una por una y recopila las respuestas:
+
+1. 🎭 ¿Cuál es su nombre completo, noble invitado?
+2. 📧 ¿Podría indicarme su dirección de correo electrónico?
+3. 🎂 ¿Cuál es su edad aproximada?
+4. ⚧️ ¿Cuál es su género? (🙋‍♀️ Femenino / 👨🏻‍🔧 Masculino / 🌀 Otro o prefiero no decirlo)
+5. 🎬 ¿Cuál es su nivel de motivación teatral y extroversión?
+   A. 🔥 WHOOHOO HE NACIDO PARA ESTO 🤘🏻
+   B. 🤩 ¡ME ENCANTA LA IDEA DE ACTUAR!
+   C. 👑 ¡LO QUE VENGA LO AFRONTARÉ!
+   D. 🙈 ¡SOY TÍMID@ Y DIVERTID@!
+   E. 🤫 ¡ALGO INCREÍBLEMENTE DISCRETO, POR FAVOR!
+6. 🗓️ ¿En qué fecha y hora participará en la sesión?
+
+Una vez recogidos todos los datos, muéstralos en un JSON limpio y termina con esta frase:
+“🎩 Gracias, joven heredero(a). Su información ha sido recogida con toda la discreción y elegancia del Detective Club. El equipo organizador tomará nota. Que la intriga le acompañe siempre. 🕯️🕵️‍♂️”
+Luego, no debes responder nada más.`
+      },
+      {
+        role: "assistant",
+        content: "🕯️ Bienvenido, joven heredero(a). Estoy aquí para asistirle en la preparación de su personaje teatral. ¿Podría indicarme su nombre completo?"
+      }
+    ];
+
+    async function sendMessage() {
+      const input = document.getElementById("userInput");
+      const userMessage = input.value;
+      if (!userMessage) return;
+
+      messages.push({ role: "user", content: userMessage });
+
+      document.getElementById("messages").innerHTML += `<div class="msg">🗣️ <strong>Tú:</strong> ${userMessage}</div>`;
+      input.value = "...";
+
+      const response = await fetch("/api/alfred", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ messages })
+      });
+
+      const data = await response.json();
+      const reply = data.choices[0].message.content;
+      messages.push({ role: "assistant", content: reply });
+      document.getElementById("messages").innerHTML += `<div class="msg">🎩 <strong>Alfred:</strong> ${reply}</div>`;
+      input.value = "";
+    }
+  </script>
+</body>
+</html>
