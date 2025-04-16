@@ -1,46 +1,53 @@
+// api/alfred.js
+
 export default async function handler(req, res) {
-  // --- CORS headers ---
-  res.setHeader("Access-Control-Allow-Origin", "*");
+  // Configurar CORS
+  res.setHeader("Access-Control-Allow-Origin", "https://123actionbarcelona.com");
+  res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
 
-  // Manejar preflight (requerido por algunos navegadores)
   if (req.method === "OPTIONS") {
     return res.status(200).end();
   }
 
-  // --- Procesar entrada ---
   const { messages } = req.body;
 
-  if (!messages) {
-    return res.status(400).json({ error: "Falta el campo 'messages' en la solicitud." });
-  }
+  console.log("Iniciando llamada a la API OpenAI...");
 
   try {
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+        "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`,
       },
       body: JSON.stringify({
-        model: "gpt-4o-mini-2024-07-18",
+        model: "gpt-4o", // o el modelo que quieras usar
         messages,
       }),
     });
 
-    const data = await response.json();
+    const responseText = await response.text();
+    console.log("Respuesta de OpenAI (texto):", responseText);
+
+    const data = JSON.parse(responseText);
 
     if (!response.ok) {
-      return res.status(response.status || 500).json({ error: "Error en OpenAI", details: data });
+      console.error("Error desde OpenAI API:", data);
+      return res.status(response.status || 500).json({
+        error: "Error de la API de OpenAI",
+        details: data,
+      });
     }
 
-    if (!data.choices || !data.choices[0]) {
+    if (!data || !data.choices || !data.choices[0]) {
+      console.error("Respuesta inesperada de OpenAI:", data);
       return res.status(500).json({ error: "Respuesta incompleta de OpenAI", data });
     }
 
-    return res.status(200).json(data);
+    res.status(200).json(data);
   } catch (error) {
-    console.error("Error general:", error);
-    return res.status(500).json({ error: "Error al conectar con OpenAI", details: error.message });
+    console.error("Error completo en la API:", error);
+    res.status(500).json({ error: "Error en la API", details: error.message });
   }
 }
